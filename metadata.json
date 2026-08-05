@@ -1,0 +1,6 @@
+{
+  "name": "ReVuelta - Moda Circular",
+  "description": "Plataforma de moda circular sostenible: compra, venta, trueque de ropa, cálculo de impacto ecológico y recompensas con EcoPuntos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
