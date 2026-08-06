@@ -12,6 +12,7 @@ import { ReviewModal } from './components/ReviewModal';
 import { SellerProfileView } from './components/SellerProfileView';
 import { EcoPointsDashboard } from './components/EcoPointsDashboard';
 import { UserSwitcherModal } from './components/UserSwitcherModal';
+import { LoginPromptModal } from './components/LoginPromptModal';
 
 import { 
   INITIAL_PRODUCTS, 
@@ -22,9 +23,31 @@ import {
 } from './data/mockData';
 import { Product, Seller, CartItem, Order, SwapOffer, EcoReward, UserProfile } from './types';
 
+const GUEST_USER: UserProfile = {
+  id: 'guest',
+  name: 'Invitado',
+  email: '',
+  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+  location: 'Modo invitado',
+  ecoPoints: 0,
+  ecoTier: 'Semilla Circular',
+  co2SavedKg: 0,
+  waterSavedLiters: 0,
+  treesEquivalent: 0,
+  myClosetItems: [],
+  favoriteIds: []
+};
+
 export default function App() {
   const [currentTab, setCurrentTab] = React.useState<string>('home');
-  const [user, setUser] = React.useState<UserProfile>(DEMO_USER_PROFILE);
+  const [user, setUser] = React.useState<UserProfile>(() => {
+    if (typeof window === 'undefined') return GUEST_USER;
+    const storedUser = window.localStorage.getItem('revuelta_user');
+    if (storedUser) {
+      return JSON.parse(storedUser) as UserProfile;
+    }
+    return GUEST_USER;
+  });
   const [products, setProducts] = React.useState<Product[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [orders, setOrders] = React.useState<Order[]>(INITIAL_ORDERS);
@@ -37,7 +60,55 @@ export default function App() {
   const [selectedSeller, setSelectedSeller] = React.useState<Seller | null>(null);
   const [ratingTargetOrder, setRatingTargetOrder] = React.useState<Order | null>(null);
   const [userSwitcherOpen, setUserSwitcherOpen] = React.useState<boolean>(false);
+  const [loginPromptOpen, setLoginPromptOpen] = React.useState<boolean>(false);
+  const [loginPromptAction, setLoginPromptAction] = React.useState<string>('ver esta sección');
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('revuelta_isLoggedIn') === 'true';
+  });
   const [exploreInitialQuery, setExploreInitialQuery] = React.useState<string>('');
+
+  const openLoginPrompt = (action: string) => {
+    setLoginPromptAction(action);
+    setLoginPromptOpen(true);
+  };
+
+  const closeLoginPrompt = () => setLoginPromptOpen(false);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setUser(DEMO_USER_PROFILE);
+    setLoginPromptOpen(false);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser(GUEST_USER);
+    setLoginPromptOpen(false);
+  };
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('revuelta_isLoggedIn', isLoggedIn ? 'true' : 'false');
+    window.localStorage.setItem('revuelta_user', JSON.stringify(user));
+  }, [isLoggedIn, user]);
+
+  const handleNavigate = (tab: string) => {
+    const protectedTabs: Record<string, string> = {
+      publish: 'publicar una prenda',
+      cart: 'ver tu carrito de compras',
+      orders: 'ver tus pedidos y trueques',
+      rewards: 'ver EcoPuntos e impacto'
+    };
+
+    if (!isLoggedIn && protectedTabs[tab]) {
+      openLoginPrompt(`iniciar sesión para ${protectedTabs[tab]}`);
+      return;
+    }
+
+    setSelectedSeller(null);
+    setCurrentTab(tab);
+  };
 
   // Cart Handlers
   const handleAddToCart = (product: Product) => {
@@ -131,8 +202,12 @@ export default function App() {
     setUser(prev => ({ ...prev, ecoPoints: Math.max(0, prev.ecoPoints - reward.pointsCost) }));
   };
 
-  const pendingSwapsCount = swapOffers.filter(s => s.status === 'pending').length;
-  const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const pendingSwapsCount = isLoggedIn
+    ? swapOffers.filter(s => s.status === 'pending').length
+    : 0;
+  const totalCartCount = isLoggedIn
+    ? cart.reduce((sum, item) => sum + item.quantity, 0)
+    : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased flex flex-col justify-between selection:bg-emerald-200 selection:text-emerald-950">
@@ -142,16 +217,24 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={(tab) => {
           setSelectedSeller(null);
-          setCurrentTab(tab);
+          handleNavigate(tab);
         }}
         user={user}
+        isLoggedIn={isLoggedIn}
         cartCount={totalCartCount}
         pendingSwapsCount={pendingSwapsCount}
         onOpenSearch={() => {
           setSelectedSeller(null);
-          setCurrentTab('explore');
+          handleNavigate('explore');
         }}
-        onOpenUserSwitcher={() => setUserSwitcherOpen(true)}
+        onOpenUserSwitcher={() => {
+          if (!isLoggedIn) {
+            openLoginPrompt('iniciar sesión para ver el perfil');
+            return;
+          }
+          setUserSwitcherOpen(true);
+        }}
+        onRequestLogin={(action: string) => openLoginPrompt(action)}
       />
 
       {/* Main View Container */}
@@ -180,7 +263,7 @@ export default function App() {
                 onQuickSwap={(p) => setSwapTargetProduct(p)}
                 favorites={favorites}
                 onToggleFavorite={handleToggleFavorite}
-                onNavigate={(tab) => setCurrentTab(tab)}
+                onNavigate={handleNavigate}
                 onSelectSeller={(s) => setSelectedSeller(s)}
               />
             )}
@@ -201,7 +284,7 @@ export default function App() {
               <PublishView
                 user={user}
                 onPublishProduct={handlePublishProduct}
-                onNavigate={(tab) => setCurrentTab(tab)}
+                onNavigate={handleNavigate}
               />
             )}
 
@@ -213,7 +296,7 @@ export default function App() {
                 onRemoveItem={handleRemoveCartItem}
                 onClearCart={handleClearCart}
                 onPlaceOrder={handlePlaceOrder}
-                onNavigate={(tab) => setCurrentTab(tab)}
+                onNavigate={handleNavigate}
               />
             )}
 
@@ -224,7 +307,7 @@ export default function App() {
                 onAcceptSwapOffer={handleAcceptSwapOffer}
                 onDeclineSwapOffer={handleDeclineSwapOffer}
                 onOpenRateOrder={(o) => setRatingTargetOrder(o)}
-                onNavigate={(tab) => setCurrentTab(tab)}
+                onNavigate={handleNavigate}
               />
             )}
 
@@ -275,14 +358,20 @@ export default function App() {
           currentUser={user}
           onClose={() => setUserSwitcherOpen(false)}
           onSwitchUser={(newUser) => setUser(newUser)}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {loginPromptOpen && (
+        <LoginPromptModal
+          actionLabel={loginPromptAction}
+          onClose={closeLoginPrompt}
+          onLogin={handleLogin}
         />
       )}
 
       {/* Footer */}
-      <Footer onNavigate={(tab) => {
-        setSelectedSeller(null);
-        setCurrentTab(tab);
-      }} />
+      <Footer onNavigate={handleNavigate} />
 
     </div>
   );

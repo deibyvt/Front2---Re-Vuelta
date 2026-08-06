@@ -7,12 +7,14 @@ interface UserSwitcherModalProps {
   currentUser: UserProfile;
   onClose: () => void;
   onSwitchUser: (newUser: UserProfile) => void;
+  onLogout: () => void;
 }
 
 export const UserSwitcherModal: React.FC<UserSwitcherModalProps> = ({
   currentUser,
   onClose,
   onSwitchUser,
+  onLogout,
 }) => {
   const profiles: UserProfile[] = [
     DEMO_USER_PROFILE,
@@ -104,6 +106,15 @@ export const UserSwitcherModal: React.FC<UserSwitcherModalProps> = ({
           })}
         </div>
 
+        <button
+          onClick={() => {
+            onLogout();
+            onClose();
+          }}
+          className="w-full mt-4 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+        >
+          Cerrar sesión
+        </button>
       </div>
     </div>
   );
