@@ -12,18 +12,18 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Product, Category, GarmentCondition, TransactionType, UserProfile } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface PublishViewProps {
   user: UserProfile;
   onPublishProduct: (product: Product) => void;
-  onNavigate: (tab: string) => void;
 }
 
 export const PublishView: React.FC<PublishViewProps> = ({
   user,
   onPublishProduct,
-  onNavigate,
 }) => {
+  const navigate = useNavigate();
   const [images, setImages] = React.useState<string[]>([
     'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=800'
   ]);
@@ -139,7 +139,7 @@ export const PublishView: React.FC<PublishViewProps> = ({
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <button
-            onClick={() => onNavigate('explore')}
+            onClick={() => navigate('/explore')}
             className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-emerald-900 transition-colors cursor-pointer"
           >
             Ver en Catálogo

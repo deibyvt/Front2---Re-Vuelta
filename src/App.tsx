@@ -1,4 +1,7 @@
 import React from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import { LoginView } from './components/LoginView';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
@@ -13,7 +16,6 @@ import { ReviewModal } from './components/ReviewModal';
 import { SellerProfileView } from './components/SellerProfileView';
 import { EcoPointsDashboard } from './components/EcoPointsDashboard';
 import { UserSwitcherModal } from './components/UserSwitcherModal';
-import { LoginPromptModal } from './components/LoginPromptModal';
 
 import { 
   INITIAL_PRODUCTS, 
@@ -40,7 +42,7 @@ const GUEST_USER: UserProfile = {
 };
 
 export default function App() {
-  const [currentTab, setCurrentTab] = React.useState<string>('home');
+  
   const [user, setUser] = React.useState<UserProfile>(() => {
     if (typeof window === 'undefined') return GUEST_USER;
     const storedUser = window.localStorage.getItem('revuelta_user');
@@ -61,31 +63,26 @@ export default function App() {
   const [selectedSeller, setSelectedSeller] = React.useState<Seller | null>(null);
   const [ratingTargetOrder, setRatingTargetOrder] = React.useState<Order | null>(null);
   const [userSwitcherOpen, setUserSwitcherOpen] = React.useState<boolean>(false);
-  const [loginPromptOpen, setLoginPromptOpen] = React.useState<boolean>(false);
-  const [loginPromptAction, setLoginPromptAction] = React.useState<string>('ver esta sección');
   const [isLoggedIn, setIsLoggedIn] = React.useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('revuelta_isLoggedIn') === 'true';
   });
   const [exploreInitialQuery, setExploreInitialQuery] = React.useState<string>('');
+  const navigate = useNavigate();
 
-  const openLoginPrompt = (action: string) => {
-    setLoginPromptAction(action);
-    setLoginPromptOpen(true);
+  const requestLogin = (action: string, redirectTo?: string) => {
+    const path = redirectTo || '/';
+    navigate('/login', { state: { from: { pathname: path }, actionLabel: action } });
   };
-
-  const closeLoginPrompt = () => setLoginPromptOpen(false);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
     setUser(DEMO_USER_PROFILE);
-    setLoginPromptOpen(false);
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUser(GUEST_USER);
-    setLoginPromptOpen(false);
   };
 
   React.useEffect(() => {
@@ -94,86 +91,6 @@ export default function App() {
     window.localStorage.setItem('revuelta_user', JSON.stringify(user));
   }, [isLoggedIn, user]);
 
-  const handleNavigate = (tab: string) => {
-    const protectedTabs: Record<string, string> = {
-      publish: 'publicar una prenda',
-      cart: 'ver tu carrito de compras',
-      orders: 'ver tus pedidos y trueques',
-      rewards: 'ver EcoPuntos e impacto',
-      notifications: 'ver tus notificaciones'
-    };
-
-    if (!isLoggedIn && protectedTabs[tab]) {
-      openLoginPrompt(`iniciar sesión para ${protectedTabs[tab]}`);
-      return;
-    }
-
-    setSelectedSeller(null);
-    setCurrentTab(tab);
-  };
-
-  // Cart Handlers
-  const handleAddToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id);
-      if (existing) {
-        return prev.map(item =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product, quantity: 1 }];
-    });
-  };
-
-  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemoveCartItem(productId);
-      return;
-    }
-    setCart(prev =>
-      prev.map(item => (item.product.id === productId ? { ...item, quantity } : item))
-    );
-  };
-
-  const handleRemoveCartItem = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId));
-  };
-
-  const handleClearCart = () => setCart([]);
-
-  // Favorites Handler
-  const handleToggleFavorite = (productId: string) => {
-    setFavorites(prev =>
-      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
-    );
-  };
-
-  // Publish Garment Handler
-  const handlePublishProduct = (newProduct: Product) => {
-    setProducts(prev => [newProduct, ...prev]);
-    setUser(prev => ({
-      ...prev,
-      ecoPoints: prev.ecoPoints + 50,
-      myClosetItems: [newProduct, ...prev.myClosetItems]
-    }));
-  };
-
-  // Swap Offer Handler
-  const handleCreateSwapOffer = (offerData: Omit<SwapOffer, 'id' | 'createdAt'>) => {
-    const newOffer: SwapOffer = {
-      ...offerData,
-      id: `so_${Date.now()}`,
-      createdAt: 'Hace un momento'
-    };
-    setSwapOffers(prev => [newOffer, ...prev]);
-  };
-
-  const handleAcceptSwapOffer = (offerId: string) => {
-    setSwapOffers(prev =>
-      prev.map(o => (o.id === offerId ? { ...o, status: 'accepted' as const } : o))
-    );
-    setUser(prev => ({ ...prev, ecoPoints: prev.ecoPoints + 100 }));
-  };
 
   const handleDeclineSwapOffer = (offerId: string) => {
     setSwapOffers(prev =>
@@ -204,6 +121,64 @@ export default function App() {
     setUser(prev => ({ ...prev, ecoPoints: Math.max(0, prev.ecoPoints - reward.pointsCost) }));
   };
 
+  // Cart handlers
+  const handleAddToCart = (product: Product, quantity = 1) => {
+    setCart(prev => {
+      const idx = prev.findIndex(ci => ci.product.id === product.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + quantity };
+        return copy;
+      }
+      return [...prev, { product, quantity }];
+    });
+  };
+
+  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
+    setCart(prev => prev.map(ci => (ci.product.id === productId ? { ...ci, quantity } : ci)));
+  };
+
+  const handleRemoveCartItem = (productId: string) => {
+    setCart(prev => prev.filter(ci => ci.product.id !== productId));
+  };
+
+  const handleClearCart = () => setCart([]);
+
+  // Favorites
+  const handleToggleFavorite = (productId: string) => {
+    setFavorites(prev => {
+      if (prev.includes(productId)) {
+        const next = prev.filter(id => id !== productId);
+        setUser(u => ({ ...u, favoriteIds: next }));
+        return next;
+      }
+      const next = [productId, ...prev];
+      setUser(u => ({ ...u, favoriteIds: next }));
+      return next;
+    });
+  };
+
+  // Swap offers
+  const handleCreateSwapOffer = (offer: Omit<SwapOffer, 'id' | 'createdAt'>) => {
+    const newOffer: SwapOffer = {
+      ...offer,
+      id: `swap_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    } as SwapOffer;
+    setSwapOffers(prev => [newOffer, ...prev]);
+  };
+
+  const handleAcceptSwapOffer = (offerId: string) => {
+    setSwapOffers(prev => prev.map(o => (o.id === offerId ? { ...o, status: 'accepted' } : o)));
+  };
+
+  // Publish product handler
+  const handlePublishProduct = (product: Product) => {
+    setProducts(prev => [product, ...prev]);
+    // reward user with some eco points
+    setUser(prev => ({ ...prev, ecoPoints: prev.ecoPoints + 50 }));
+  };
+
   const pendingSwapsCount = isLoggedIn
     ? swapOffers.filter(s => s.status === 'pending').length
     : 0;
@@ -216,47 +191,36 @@ export default function App() {
       
       {/* Top Main Navigation */}
       <Navbar
-        currentTab={currentTab}
-        setCurrentTab={(tab) => {
-          setSelectedSeller(null);
-          handleNavigate(tab);
-        }}
         user={user}
         isLoggedIn={isLoggedIn}
         cartCount={totalCartCount}
         pendingSwapsCount={pendingSwapsCount}
-        onOpenSearch={() => {
-          setSelectedSeller(null);
-          handleNavigate('explore');
-        }}
         onOpenUserSwitcher={() => {
           if (!isLoggedIn) {
-            openLoginPrompt('iniciar sesión para ver el perfil');
+            requestLogin('iniciar sesión para ver el perfil', '/');
             return;
           }
           setUserSwitcherOpen(true);
         }}
-        onRequestLogin={(action: string) => openLoginPrompt(action)}
+        onRequestLogin={(action: string, fromPath?: string) => requestLogin(action, fromPath)}
       />
 
       {/* Main View Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        
-        {/* If a seller profile is currently being inspected */}
-        {selectedSeller ? (
-          <SellerProfileView
-            seller={selectedSeller}
-            products={products}
-            onBack={() => setSelectedSeller(null)}
-            onSelectProduct={(p) => setSelectedProduct(p)}
-            onAddToCart={handleAddToCart}
-            onQuickSwap={(p) => setSwapTargetProduct(p)}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        ) : (
-          <>
-            {currentTab === 'home' && (
+        <Routes>
+          <Route path="/" element={
+            selectedSeller ? (
+              <SellerProfileView
+                seller={selectedSeller}
+                products={products}
+                onBack={() => setSelectedSeller(null)}
+                onSelectProduct={(p) => setSelectedProduct(p)}
+                onAddToCart={handleAddToCart}
+                onQuickSwap={(p) => setSwapTargetProduct(p)}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ) : (
               <HomeView
                 products={products}
                 sellers={Object.values(MOCK_SELLERS)}
@@ -265,67 +229,37 @@ export default function App() {
                 onQuickSwap={(p) => setSwapTargetProduct(p)}
                 favorites={favorites}
                 onToggleFavorite={handleToggleFavorite}
-                onNavigate={handleNavigate}
                 onSelectSeller={(s) => setSelectedSeller(s)}
               />
-            )}
+            )
+          } />
 
-            {currentTab === 'explore' && (
-              <ExploreView
-                products={products}
-                onSelectProduct={(p) => setSelectedProduct(p)}
-                onAddToCart={handleAddToCart}
-                onQuickSwap={(p) => setSwapTargetProduct(p)}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                initialQuery={exploreInitialQuery}
-              />
-            )}
+          <Route path="/explore" element={
+            <ExploreView
+              products={products}
+              onSelectProduct={(p) => setSelectedProduct(p)}
+              onAddToCart={handleAddToCart}
+              onQuickSwap={(p) => setSwapTargetProduct(p)}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+              initialQuery={exploreInitialQuery}
+            />
+          } />
 
-            {currentTab === 'publish' && (
-              <PublishView
-                user={user}
-                onPublishProduct={handlePublishProduct}
-                onNavigate={handleNavigate}
-              />
-            )}
+          <Route path="/publish" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PublishView user={user} onPublishProduct={handlePublishProduct} /></ProtectedRoute>} />
 
-            {currentTab === 'cart' && (
-              <CartCheckoutView
-                cart={cart}
-                user={user}
-                onUpdateQuantity={handleUpdateCartQuantity}
-                onRemoveItem={handleRemoveCartItem}
-                onClearCart={handleClearCart}
-                onPlaceOrder={handlePlaceOrder}
-                onNavigate={handleNavigate}
-              />
-            )}
+          <Route path="/cart" element={<ProtectedRoute isLoggedIn={isLoggedIn}><CartCheckoutView cart={cart} user={user} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveCartItem} onClearCart={handleClearCart} onPlaceOrder={handlePlaceOrder} /></ProtectedRoute>} />
 
-            {currentTab === 'orders' && (
-              <MyOrdersView
-                orders={orders}
-                swapOffers={swapOffers}
-                onAcceptSwapOffer={handleAcceptSwapOffer}
-                onDeclineSwapOffer={handleDeclineSwapOffer}
-                onOpenRateOrder={(o) => setRatingTargetOrder(o)}
-                onNavigate={handleNavigate}
-              />
-            )}
+          <Route path="/orders" element={<ProtectedRoute isLoggedIn={isLoggedIn}><MyOrdersView orders={orders} swapOffers={swapOffers} onAcceptSwapOffer={handleAcceptSwapOffer} onDeclineSwapOffer={handleDeclineSwapOffer} onOpenRateOrder={(o) => setRatingTargetOrder(o)} /></ProtectedRoute>} />
 
-            {currentTab === 'rewards' && (
-              <EcoPointsDashboard
-                user={user}
-                onRedeemReward={handleRedeemReward}
-              />
-            )}
+          <Route path="/rewards" element={<ProtectedRoute isLoggedIn={isLoggedIn}><EcoPointsDashboard user={user} onRedeemReward={handleRedeemReward} /></ProtectedRoute>} />
 
-            {currentTab === 'notifications' && (
-              <NotificationsView />
-            )}
-          </>
-        )}
+          <Route path="/notifications" element={<ProtectedRoute isLoggedIn={isLoggedIn}><NotificationsView /></ProtectedRoute>} />
 
+          <Route path="/login" element={<LoginView onLogin={handleLogin} />} />
+
+          <Route path="*" element={<HomeView products={products} sellers={Object.values(MOCK_SELLERS)} onSelectProduct={(p) => setSelectedProduct(p)} onAddToCart={handleAddToCart} onQuickSwap={(p) => setSwapTargetProduct(p)} favorites={favorites} onToggleFavorite={handleToggleFavorite} onSelectSeller={(s) => setSelectedSeller(s)} />} />
+        </Routes>
       </main>
 
       {/* Global Modals & Overlays */}
@@ -368,16 +302,10 @@ export default function App() {
         />
       )}
 
-      {loginPromptOpen && (
-        <LoginPromptModal
-          actionLabel={loginPromptAction}
-          onClose={closeLoginPrompt}
-          onLogin={handleLogin}
-        />
-      )}
+      {/* Login prompt replaced by /login route; handled via `requestLogin` */}
 
       {/* Footer */}
-      <Footer onNavigate={handleNavigate} />
+      <Footer />
 
     </div>
   );

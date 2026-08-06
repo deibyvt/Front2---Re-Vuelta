@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
   Trash2, 
@@ -22,7 +23,6 @@ interface CartCheckoutViewProps {
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
   onPlaceOrder: (order: Order) => void;
-  onNavigate: (tab: string) => void;
 }
 
 export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({
@@ -32,8 +32,8 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({
   onRemoveItem,
   onClearCart,
   onPlaceOrder,
-  onNavigate,
 }) => {
+  const navigate = useNavigate();
   const [usePointsDiscount, setUsePointsDiscount] = React.useState(false);
   const [deliveryMethod, setDeliveryMethod] = React.useState<'punto_encuentro' | 'envio_domicilio'>('punto_encuentro');
   const [shippingAddress, setShippingAddress] = React.useState('Av. Conquistadores 450, San Isidro');
@@ -88,10 +88,10 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({
         </div>
 
         <div className="pt-2">
-          <button
+            <button
             onClick={() => {
               setIsPlaced(false);
-              onNavigate('orders');
+              navigate('/orders');
             }}
             className="w-full py-3.5 bg-emerald-800 text-white rounded-xl font-bold text-sm hover:bg-emerald-900 transition-colors cursor-pointer"
           >
@@ -113,7 +113,7 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({
           Explora miles de prendas únicas de vendedores sostenibles y dales una segunda vida.
         </p>
         <button
-          onClick={() => onNavigate('explore')}
+          onClick={() => navigate('/explore')}
           className="px-6 py-3 bg-emerald-800 text-white rounded-xl font-bold text-xs hover:bg-emerald-900 transition-colors cursor-pointer"
         >
           Explorar Catálogo

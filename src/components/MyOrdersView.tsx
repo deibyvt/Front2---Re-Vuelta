@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Repeat, 
   ShoppingBag, 
@@ -21,7 +22,6 @@ interface MyOrdersViewProps {
   onAcceptSwapOffer: (offerId: string) => void;
   onDeclineSwapOffer: (offerId: string) => void;
   onOpenRateOrder: (order: Order) => void;
-  onNavigate: (tab: string) => void;
 }
 
 export const MyOrdersView: React.FC<MyOrdersViewProps> = ({
@@ -30,8 +30,8 @@ export const MyOrdersView: React.FC<MyOrdersViewProps> = ({
   onAcceptSwapOffer,
   onDeclineSwapOffer,
   onOpenRateOrder,
-  onNavigate,
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState<'swaps' | 'orders'>('swaps');
 
   return (
@@ -195,7 +195,7 @@ export const MyOrdersView: React.FC<MyOrdersViewProps> = ({
             <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-3">
               <p className="text-sm text-slate-500">No tienes propuestas de trueque pendientes.</p>
               <button
-                onClick={() => onNavigate('explore')}
+                onClick={() => navigate('/explore')}
                 className="px-5 py-2.5 bg-emerald-800 text-white font-bold text-xs rounded-xl hover:bg-emerald-900 cursor-pointer"
               >
                 Explorar prendas para proponer trueque

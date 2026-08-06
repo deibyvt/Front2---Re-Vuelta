@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Repeat, 
   ShoppingBag, 
@@ -24,7 +25,6 @@ interface HomeViewProps {
   onQuickSwap: (product: Product) => void;
   favorites: string[];
   onToggleFavorite: (productId: string) => void;
-  onNavigate: (tab: string) => void;
   onSelectSeller: (seller: Seller) => void;
 }
 
@@ -36,9 +36,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onQuickSwap,
   favorites,
   onToggleFavorite,
-  onNavigate,
   onSelectSeller,
 }) => {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'swap' | 'sale'>('all');
 
   const filteredProducts = React.useMemo(() => {
@@ -77,7 +77,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           <div className="flex flex-wrap gap-4 pt-2">
             <button
-              onClick={() => onNavigate('explore')}
+              onClick={() => navigate('/explore')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 text-emerald-950 font-bold text-sm hover:opacity-95 shadow-lg hover:shadow-emerald-500/20 transition-all cursor-pointer"
             >
               <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
@@ -85,7 +85,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </button>
 
             <button
-              onClick={() => onNavigate('publish')}
+              onClick={() => navigate('/publish')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 font-semibold text-sm border border-emerald-700/80 backdrop-blur-md transition-all cursor-pointer"
             >
               <Repeat className="w-4 h-4 text-teal-300" />
@@ -223,8 +223,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="text-center pt-4">
-          <button
-            onClick={() => onNavigate('explore')}
+              <button
+                onClick={() => navigate('/explore')}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-emerald-900 transition-colors cursor-pointer"
           >
             <span>Ver todo el catálogo ({products.length} prendas)</span>

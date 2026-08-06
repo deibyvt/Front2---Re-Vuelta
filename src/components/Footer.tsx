@@ -1,11 +1,11 @@
 import React from 'react';
 import { Repeat, Heart, ShieldCheck, Leaf, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-interface FooterProps {
-  onNavigate: (tab: string) => void;
-}
+export const Footer: React.FC = () => {
+  const navigate = useNavigate();
+  const go = (tab: string) => navigate(tab === 'home' ? '/' : `/${tab}`);
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   return (
     <footer className="bg-emerald-950 text-emerald-100 border-t border-emerald-900 mt-16 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -29,10 +29,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-teal-300">Navegación</h4>
             <ul className="space-y-1.5 text-xs text-emerald-200/80">
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white cursor-pointer">Inicio & Tendencias</button></li>
-              <li><button onClick={() => onNavigate('explore')} className="hover:text-white cursor-pointer">Catálogo Completo</button></li>
-              <li><button onClick={() => onNavigate('publish')} className="hover:text-white cursor-pointer">Publicar Prenda o Trueque</button></li>
-              <li><button onClick={() => onNavigate('rewards')} className="hover:text-white cursor-pointer">EcoPuntos & Impacto</button></li>
+              <li><button onClick={() => go('home')} className="hover:text-white cursor-pointer">Inicio & Tendencias</button></li>
+              <li><button onClick={() => go('explore')} className="hover:text-white cursor-pointer">Catálogo Completo</button></li>
+              <li><button onClick={() => go('publish')} className="hover:text-white cursor-pointer">Publicar Prenda o Trueque</button></li>
+              <li><button onClick={() => go('rewards')} className="hover:text-white cursor-pointer">EcoPuntos & Impacto</button></li>
             </ul>
           </div>
 
