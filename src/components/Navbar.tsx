@@ -99,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <div className="flex items-center gap-2.5">
               <button
-                onClick={() => onRequestLogin('iniciar sesión para ver notificaciones')}
+                onClick={() => setCurrentTab('notifications')}
                 className="p-2.5 rounded-full text-emerald-200 hover:text-white hover:bg-emerald-900/80 transition-colors"
                 title="Notificaciones"
               >
@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               <button
-                onClick={() => onRequestLogin('iniciar sesión para ver el carrito de compras')}
+                onClick={() => setCurrentTab('cart')}
                 className={`relative p-2.5 rounded-full transition-colors cursor-pointer ${
                   currentTab === 'cart' 
                     ? 'bg-emerald-800 text-white' 
@@ -124,22 +124,36 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               <button
-                onClick={onOpenUserSwitcher}
+                onClick={() => {
+                  if (isLoggedIn) {
+                    onOpenUserSwitcher();
+                    return;
+                  }
+                  onRequestLogin('iniciar sesión para ver perfil');
+                }}
                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-emerald-900/80 border border-emerald-700/60 transition-all cursor-pointer group"
-                title="Cambiar usuario o ver perfil"
+                title={isLoggedIn ? 'Cambiar usuario o ver perfil' : 'Iniciar sesión'}
               >
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-400/80 group-hover:ring-teal-300"
-                />
-                <span className="hidden sm:inline-block text-xs font-medium text-emerald-100 pr-1 max-w-[100px] truncate">
-                  {user.name.split(' ')[0]}
-                </span>
+                {isLoggedIn ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-400/80 group-hover:ring-teal-300"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-emerald-800/90 flex items-center justify-center text-emerald-200">
+                    <User className="w-5 h-5" />
+                  </div>
+                )}
+                {isLoggedIn && (
+                  <span className="hidden sm:inline-block text-xs font-medium text-emerald-100 pr-1 max-w-[100px] truncate">
+                    {user.name.split(' ')[0]}
+                  </span>
+                )}
               </button>
 
               <button
-                onClick={() => onRequestLogin('iniciar sesión para publicar prenda')}
+                onClick={() => setCurrentTab('publish')}
                 className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 text-emerald-950 font-semibold hover:opacity-95 transition-all"
               >
                 <PlusCircle className="w-4 h-4" />
@@ -167,13 +181,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    if (isProtected) {
-                      onRequestLogin(`iniciar sesión para ver ${item.label.toLowerCase()}`);
-                      return;
-                    }
-                    setCurrentTab(item.id);
-                  }}
+                  onClick={() => setCurrentTab(item.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative cursor-pointer ${
                     isActive 
                       ? 'bg-emerald-800/80 text-white font-semibold' 
@@ -216,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => {
-                  if (isProtected) {
+                  if (!isLoggedIn && isProtected) {
                     onRequestLogin(`iniciar sesión para ver ${item.label.toLowerCase()}`);
                     setMobileMenuOpen(false);
                     return;

@@ -8,6 +8,7 @@ import { SwapModal } from './components/SwapModal';
 import { PublishView } from './components/PublishView';
 import { CartCheckoutView } from './components/CartCheckoutView';
 import { MyOrdersView } from './components/MyOrdersView';
+import { NotificationsView } from './components/NotificationsView';
 import { ReviewModal } from './components/ReviewModal';
 import { SellerProfileView } from './components/SellerProfileView';
 import { EcoPointsDashboard } from './components/EcoPointsDashboard';
@@ -98,7 +99,8 @@ export default function App() {
       publish: 'publicar una prenda',
       cart: 'ver tu carrito de compras',
       orders: 'ver tus pedidos y trueques',
-      rewards: 'ver EcoPuntos e impacto'
+      rewards: 'ver EcoPuntos e impacto',
+      notifications: 'ver tus notificaciones'
     };
 
     if (!isLoggedIn && protectedTabs[tab]) {
@@ -316,6 +318,10 @@ export default function App() {
                 user={user}
                 onRedeemReward={handleRedeemReward}
               />
+            )}
+
+            {currentTab === 'notifications' && (
+              <NotificationsView />
             )}
           </>
         )}
